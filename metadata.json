@@ -1,0 +1,6 @@
+{
+  "name": "TradeEdge Journal",
+  "description": "Professional trading journal dashboard for forex, crypto, and stock traders to analyze edge, equity curves, win/loss metrics, and pair performance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
