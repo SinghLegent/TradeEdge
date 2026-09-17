@@ -14,13 +14,9 @@ interface LiveTrade {
 }
 
 export const LiveBrokerFeed: React.FC = () => {
-  const [trades, setTrades] = useState<LiveTrade[]>([
-    { id: '1', pair: 'EUR/USD', type: 'BUY', lot: 1.0, open: 1.0850, current: 1.0862, sl: 1.0820, tp: 1.0950, pnl: 120.00 },
-    { id: '2', pair: 'XAU/USD', type: 'SELL', lot: 0.5, open: 2350.50, current: 2352.00, sl: 2360.00, tp: 2330.00, pnl: -75.00 },
-    { id: '3', pair: 'NAS100', type: 'BUY', lot: 2.0, open: 17500.0, current: 17515.5, sl: 17400.0, tp: 17700.0, pnl: 62.00 }
-  ]);
+  const [trades, setTrades] = useState<LiveTrade[]>([]);
   
-  const [totalPnl, setTotalPnl] = useState(107.00);
+  const [totalPnl, setTotalPnl] = useState(0.00);
   const [trend, setTrend] = useState<'up' | 'down' | null>(null);
 
   // Simulate live price updates

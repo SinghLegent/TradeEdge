@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { supabase } from './lib/supabase';
+import { fetchTrades, addTrade, removeTrade } from './lib/api';
+import { User } from '@supabase/supabase-js';
 import { Navbar } from './components/Navbar';
 import { MetricCards } from './components/MetricCards';
 import { EquityChart } from './components/EquityChart';
@@ -15,6 +18,7 @@ import { LiveBrokerFeed } from './components/LiveBrokerFeed';
 import { PriceAlertManager } from './components/PriceAlertManager';
 import { ChartGalleryView } from './components/ChartGalleryView';
 import { AICoachWidget } from './components/AICoachWidget';
+import { SettingsView } from './components/SettingsView';
 import { 
   INITIAL_TRADES, 
   INITIAL_STARTING_BALANCE, 
@@ -34,13 +38,65 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [trades, setTrades] = useState<Trade[]>(INITIAL_TRADES);
+  const [user, setUser] = useState<User | null>(null);
+  const [trades, setTrades] = useState<Trade[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>('trade_log');
   const [assetFilter, setAssetFilter] = useState<AssetClassFilter>('ALL');
   const [timeframe, setTimeframe] = useState<TimeframeFilter>('ALL');
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isAppLoading, setIsAppLoading] = useState(true);
+
+  const [theme, setTheme] = useState({ bgColor: '#080c15', accentColor: '#10b981' });
+
+  // Check active session on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user?.user_metadata?.preferences) {
+        const prefs = session.user.user_metadata.preferences;
+        if (prefs.bgColor) setTheme(prev => ({ ...prev, bgColor: prefs.bgColor }));
+        if (prefs.accentColor) setTheme(prev => ({ ...prev, accentColor: prefs.accentColor }));
+      }
+
+      if (!session?.user) {
+        setTrades(INITIAL_TRADES); // Use mock data if not logged in (demo mode)
+        setIsAppLoading(false);
+      } else {
+        loadUserTrades();
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        if (session.user.user_metadata?.preferences) {
+          const prefs = session.user.user_metadata.preferences;
+          if (prefs.bgColor) setTheme(prev => ({ ...prev, bgColor: prefs.bgColor }));
+          if (prefs.accentColor) setTheme(prev => ({ ...prev, accentColor: prefs.accentColor }));
+        }
+        loadUserTrades();
+      } else {
+        setTrades(INITIAL_TRADES);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handlePreferencesChange = (prefs: any) => {
+    if (prefs.bgColor) setTheme(prev => ({ ...prev, bgColor: prefs.bgColor }));
+    if (prefs.accentColor) setTheme(prev => ({ ...prev, accentColor: prefs.accentColor }));
+  };
+
+  const loadUserTrades = async () => {
+    setIsAppLoading(true);
+    const userTrades = await fetchTrades();
+    setTrades(userTrades);
+    setIsAppLoading(false);
+  };
 
   // Filter trades by asset class if selected
   const filteredTrades = useMemo(() => {
@@ -76,7 +132,8 @@ export default function App() {
     }, 3000);
   };
 
-  const handleSaveTrade = (savedTrade: Trade) => {
+  const handleSaveTrade = async (savedTrade: Trade) => {
+    // Optimistic UI Update
     setTrades(prev => {
       const existsIndex = prev.findIndex(t => t.id === savedTrade.id);
       if (existsIndex >= 0) {
@@ -86,30 +143,103 @@ export default function App() {
       }
       return [savedTrade, ...prev];
     });
+    
+    // Save to Supabase (if logged in)
+    if (user) {
+      try {
+        await addTrade(savedTrade);
+      } catch (err: any) {
+        showToast('Error saving to database: ' + err.message);
+        // We could revert the optimistic update here if needed
+      }
+    }
+    
     showToast(`Trade on ${savedTrade.symbol} saved successfully! Net PnL: ${savedTrade.pnl >= 0 ? '+' : ''}$${savedTrade.pnl.toLocaleString()}`);
   };
 
-  const handleDeleteTrade = (id: string) => {
+  const handleDeleteTrade = async (id: string) => {
+    // Optimistic UI Update
     setTrades(prev => prev.filter(t => t.id !== id));
+    
+    if (user) {
+      try {
+        await removeTrade(id);
+      } catch (err: any) {
+        showToast('Error deleting from database: ' + err.message);
+      }
+    }
     showToast('Trade entry removed from journal.');
   };
 
-  // If not authenticated, show Auth flow
-  if (!isAuthenticated) {
-    return <Auth onLogin={() => setIsAuthenticated(true)} />;
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (isAppLoading) {
+    return <div className="min-h-screen bg-[#080c15] flex items-center justify-center text-slate-400">Loading...</div>;
   }
 
+  // If not authenticated, show Auth flow
+  if (!user) {
+    return <Auth onLogin={() => {}} />;
+  }
+
+  // Theme Helper
+  const adjustColor = (hex: string, amount: number) => {
+    let color = hex.replace(/^#/, '');
+    if (color.length === 3) color = color.split('').map(c => c + c).join('');
+    
+    let r = parseInt(color.substring(0, 2), 16) || 0;
+    let g = parseInt(color.substring(2, 4), 16) || 0;
+    let b = parseInt(color.substring(4, 6), 16) || 0;
+    
+    r = Math.max(0, Math.min(255, r + amount));
+    g = Math.max(0, Math.min(255, g + amount));
+    b = Math.max(0, Math.min(255, b + amount));
+    
+    return `#${(r).toString(16).padStart(2, '0')}${(g).toString(16).padStart(2, '0')}${(b).toString(16).padStart(2, '0')}`;
+  };
+
+  const themeNav = adjustColor(theme.bgColor, 3);
+  const themePanel = adjustColor(theme.bgColor, 6);
+  const themeInner = adjustColor(theme.bgColor, 12);
+  const themeHover = adjustColor(theme.bgColor, 16);
+  const themeFooter = adjustColor(theme.bgColor, -2);
+
   return (
-    <div className="min-h-screen bg-[#080c15] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300">
+    <div 
+      className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300 transition-colors duration-500"
+      style={{ backgroundColor: theme.bgColor }}
+    >
+      <style>{`
+        :root {
+          --color-emerald-300: ${adjustColor(theme.accentColor, 40)};
+          --color-emerald-400: ${theme.accentColor};
+          --color-emerald-500: ${adjustColor(theme.accentColor, -20)};
+          --color-emerald-600: ${adjustColor(theme.accentColor, -40)};
+        }
+        
+        /* Override hardcoded Tailwind background classes across the app */
+        .bg-\\[\\#080c15\\] { background-color: ${theme.bgColor} !important; }
+        .bg-\\[\\#0b0f19\\] { background-color: ${themeNav} !important; }
+        .bg-\\[\\#0e1422\\] { background-color: ${themePanel} !important; }
+        .bg-\\[\\#161f33\\] { background-color: ${themeInner} !important; }
+        .bg-\\[\\#1a253c\\] { background-color: ${themeHover} !important; }
+        .bg-\\[\\#070a12\\] { background-color: ${themeFooter} !important; }
+        
+        .hover\\:bg-\\[\\#1a253c\\]:hover { background-color: ${themeHover} !important; }
+      `}</style>
+      
       {/* Top Navigation */}
       <Navbar
+        user={user}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         assetFilter={assetFilter}
         setAssetFilter={setAssetFilter}
         onOpenLogModal={() => setIsLogModalOpen(true)}
         currentBalance={currentBalance}
-        onLogout={() => setIsAuthenticated(false)}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
@@ -195,35 +325,7 @@ export default function App() {
         )}
 
         {activeTab === 'settings' && (
-          <div className="w-full max-w-4xl mx-auto">
-            <div className="mb-6 flex flex-col gap-1">
-              <h1 className="text-2xl font-black tracking-tight text-white">Account Settings</h1>
-              <p className="text-sm font-medium text-slate-400">Manage your profile, preferences, and billing</p>
-            </div>
-            
-            <div className="bg-[#0e1422] rounded-2xl border border-slate-800 shadow-xl overflow-hidden p-6 md:p-10 text-center flex flex-col items-center justify-center min-h-[400px]">
-              <div className="h-20 w-20 rounded-full bg-slate-800 border-4 border-slate-700 flex items-center justify-center text-2xl font-bold text-white mb-4">
-                AT
-              </div>
-              <h2 className="text-xl font-bold text-white mb-1">Alex Trader</h2>
-              <p className="text-slate-400 text-sm mb-6">alex@trader.com</p>
-              
-              <div className="w-full max-w-md bg-[#161f33] rounded-xl p-4 border border-slate-800/80 text-left space-y-4">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-800">
-                  <span className="text-sm font-semibold text-slate-300">Subscription Plan</span>
-                  <span className="text-xs font-bold bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">PRO</span>
-                </div>
-                <div className="flex justify-between items-center pb-4 border-b border-slate-800">
-                  <span className="text-sm font-semibold text-slate-300">Base Currency</span>
-                  <span className="text-sm font-mono text-white">USD ($)</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-300">Security</span>
-                  <span className="text-sm font-medium text-cyan-400 cursor-pointer hover:text-cyan-300 transition-colors">Update Password</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SettingsView user={user} onPreferencesChange={handlePreferencesChange} />
         )}
       </main>
 

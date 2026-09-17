@@ -72,11 +72,7 @@ export const BrokerSyncView: React.FC = () => {
   };
 
   // Mock live trades for the table
-  const liveTrades = [
-    { id: 'pos-1', symbol: 'XAU/USD', direction: 'LONG', entry: '2345.50', current: '2352.10', volume: '1.50', pnl: 990.00 },
-    { id: 'pos-2', symbol: 'EUR/USD', direction: 'SHORT', entry: '1.09200', current: '1.09150', volume: '3.00', pnl: 150.00 },
-    { id: 'pos-3', symbol: 'US30', direction: 'LONG', entry: '39100', current: '39050', volume: '0.50', pnl: -250.00 },
-  ];
+  const liveTrades: any[] = [];
 
   return (
     <div className="space-y-6">

@@ -14,9 +14,11 @@ import {
   LogOut,
   Image
 } from 'lucide-react';
+import { User } from '@supabase/supabase-js';
 import { ActiveTab, AssetClassFilter } from '../types';
 
 interface NavbarProps {
+  user: User;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   assetFilter: AssetClassFilter;
@@ -27,6 +29,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  user,
   activeTab,
   setActiveTab,
   assetFilter,
@@ -37,6 +40,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+  const initials = fullName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -152,14 +163,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Right: Asset filter pill, Log Trade CTA & Profile */}
         <div className="flex items-center gap-3">
           {/* MT5 Broker Status Badge */}
-          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-400">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-500"></span>
             </span>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-wider leading-none">MT5 Connected</span>
-              <span className="text-[9px] text-emerald-500/80 font-medium leading-tight">ICMarkets-Live • Syncing...</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider leading-none">Not Connected</span>
+              <span className="text-[9px] text-slate-500 font-medium leading-tight">Link a broker in sync tab</span>
             </div>
           </div>
 
@@ -209,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 border border-slate-600 flex items-center justify-center text-xs font-bold text-white shadow-inner">
-                  AT
+                  {initials}
                 </div>
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0b0f19]"></span>
               </div>
@@ -219,8 +229,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="absolute right-0 mt-2 w-56 bg-[#161f33] border border-slate-700/80 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
                   {/* Header Section */}
                   <div className="px-4 py-3 bg-[#0e1422]">
-                    <p className="text-sm font-bold text-white">Alex Trader</p>
-                    <p className="text-xs font-medium text-slate-400 truncate">alex@trader.com</p>
+                    <p className="text-sm font-bold text-white">{fullName}</p>
+                    <p className="text-xs font-medium text-slate-400 truncate">{user.email}</p>
                   </div>
                   
                   <div className="border-t border-slate-800"></div>
