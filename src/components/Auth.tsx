@@ -49,8 +49,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setErrorMsg('');
     
     // Check for missing Supabase credentials
-    if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-      setErrorMsg('Database connection is not configured. Please add your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.SUPABASE_URL;
+    if (!url || url.includes('placeholder')) {
+      setErrorMsg('Database connection is not configured. The Vercel Supabase integration variables are missing.');
       setIsLoading(false);
       return;
     }
@@ -74,9 +75,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
     
     // Auto-login or show success
-    // In this applet, since we don't have full session management wired,
-    // we'll just call onLogin() to enter the app for demo purposes, 
-    // or set a success message.
     onLogin();
   };
 
@@ -86,8 +84,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setErrorMsg('');
 
     // Check for missing Supabase credentials
-    if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-      setErrorMsg('Database connection is not configured. Please add your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.SUPABASE_URL;
+    if (!url || url.includes('placeholder')) {
+      setErrorMsg('Database connection is not configured. The Vercel Supabase integration variables are missing.');
       setIsLoading(false);
       return;
     }
