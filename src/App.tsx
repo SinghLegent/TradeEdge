@@ -14,6 +14,7 @@ import { Auth } from './components/Auth';
 import { LiveBrokerFeed } from './components/LiveBrokerFeed';
 import { PriceAlertManager } from './components/PriceAlertManager';
 import { ChartGalleryView } from './components/ChartGalleryView';
+import { AICoachWidget } from './components/AICoachWidget';
 import { 
   INITIAL_TRADES, 
   INITIAL_STARTING_BALANCE, 
@@ -250,6 +251,9 @@ export default function App() {
         onAddTrade={handleSaveTrade}
         currentBalance={currentBalance}
       />
+
+      {/* Floating AI Coach Widget */}
+      <AICoachWidget />
     </div>
   );
 }
