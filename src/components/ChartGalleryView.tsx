@@ -3,7 +3,7 @@ import { Trade } from '../types';
 import { 
   Image as ImageIcon, ZoomIn, Search, Filter, 
   Calendar, LayoutGrid, LayoutList, X,
-  TrendingUp, TrendingDown, Clock, MoveHorizontal
+  TrendingUp, TrendingDown, Clock, MoveHorizontal, Check
 } from 'lucide-react';
 
 interface ChartGalleryViewProps {
@@ -199,10 +199,10 @@ const FilterPill = ({ active, label, colorClass, onClick }: { active: boolean, l
   );
 }
 
-const ChartCard = ({ trade, viewMode, onClick }: { trade: Trade, viewMode: 'GRID'|'MASONRY', onClick: () => void }) => {
+const ChartCard: React.FC<{ trade: Trade, viewMode: 'GRID'|'MASONRY', onClick: () => void }> = ({ trade, viewMode, onClick }) => {
   const isWin = trade.outcome === 'WIN';
   const isLoss = trade.outcome === 'LOSS';
-  const isBE = trade.outcome === 'BE';
+  const isBE = trade.outcome === 'BREAKEVEN';
   const isLong = trade.direction === 'LONG';
 
   // Base styling for outcome
@@ -296,6 +296,7 @@ const ChartCard = ({ trade, viewMode, onClick }: { trade: Trade, viewMode: 'GRID
 const LightboxModal = ({ trade, onClose }: { trade: Trade, onClose: () => void }) => {
   const isWin = trade.outcome === 'WIN';
   const isLoss = trade.outcome === 'LOSS';
+  const isBE = trade.outcome === 'BREAKEVEN';
   const isLong = trade.direction === 'LONG';
 
   let pnlColor = 'text-slate-300';
