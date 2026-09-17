@@ -47,14 +47,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     e?.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
-    
-    // Check for missing Supabase credentials
-    const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.SUPABASE_URL;
-    if (!url || url.includes('placeholder')) {
-      setErrorMsg('Database connection is not configured. The Vercel Supabase integration variables are missing.');
-      setIsLoading(false);
-      return;
-    }
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -82,14 +74,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     e?.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
-
-    // Check for missing Supabase credentials
-    const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.SUPABASE_URL;
-    if (!url || url.includes('placeholder')) {
-      setErrorMsg('Database connection is not configured. The Vercel Supabase integration variables are missing.');
-      setIsLoading(false);
-      return;
-    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
