@@ -48,6 +48,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setIsLoading(true);
     setErrorMsg('');
     
+    // Check for missing Supabase credentials
+    if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
+      setErrorMsg('Database connection is not configured. Please add your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      setIsLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -77,6 +84,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     e?.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
+
+    // Check for missing Supabase credentials
+    if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
+      setErrorMsg('Database connection is not configured. Please add your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      setIsLoading(false);
+      return;
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
